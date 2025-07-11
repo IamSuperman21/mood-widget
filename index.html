@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Пульс-опрос — Настроение</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#f3f3f3;font-family:'Segoe UI',sans-serif;">
+
+<div id="mood-widget" style="padding: 20px; border-radius: 16px; max-width: 350px; text-align: center; margin: 0 auto;">
+  <h3 style="margin: 0 0 10px;">Как ты сегодня? 🤔</h3>
+  <div id="mood-options" style="font-size: 24px;">
+    <span class="mood" data-value="1">😞</span>
+    <span class="mood" data-value="2">😕</span>
+    <span class="mood" data-value="3">😐</span>
+    <span class="mood" data-value="4">🙂</span>
+    <span class="mood" data-value="5">😄</span>
+  </div>
+  <div id="mood-result" style="margin-top: 10px; font-size: 14px; color: #666; display: none;">Спасибо за ответ!</div>
+  <div id="mood-average" style="margin-top: 10px; font-size: 16px; font-weight: bold; display: none;">Среднее настроение: 😐</div>
+</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbwSlDou6RFijtV-_1ekXYeYqjOOTlqDPl-QDjsXqtMHWzQPkD763AKgwlAXPKqeq2QQbA/exec";
+  const emojiMap = {
+    1: '😞',
+    2: '😕',
+    3: '😐',
+    4: '🙂',
+    5: '😄'
+  };
+
+  const moodKey = 'mood_vote';
+  const dateKey = 'mood_vote_date';
+  const today = new Date().toISOString().split('T')[0];
+
+  const vote = localStorage.getItem(moodKey);
+  const voteDate = localStorage.getItem(dateKey);
+
+  const moodOptions = document.getElementById('mood-options');
+  const moodResult = document.getElementById('mood-result');
+  const moodAverage = document.getElementById('mood-average');
+
+  function displayAverage() {
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => {
+        const mood = Math.round(data.avg);
+        moodAverage.innerText = `Среднее настроение: ${emojiMap[mood] || '😐'}`;
+        moodAverage.style.display = 'block';
+      });
+  }
+
+  if (vote && voteDate === today) {
+    moodOptions.style.display = 'none';
+    moodResult.innerText = `Вы уже отметились сегодня 😊`;
+    moodResult.style.display = 'block';
+    displayAverage();
+  }
+
+  document.querySelectorAll('.mood').forEach(el => {
+    el.addEventListener('click', function () {
+      const value = this.getAttribute('data-value');
+      const userName = window.userName || 'Аноним';
+
+      localStorage.setItem(moodKey, value);
+      localStorage.setItem(dateKey, today);
+
+      moodOptions.style.display = 'none';
+      moodResult.innerText = 'Спасибо за ответ! 😊';
+      moodResult.style.display = 'block';
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: userName,
+          mood: Number(value)
+        })
+      });
+
+      displayAverage();
+    });
+  });
+</script>
+
+</body>
+</html>
